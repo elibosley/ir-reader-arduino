@@ -61,6 +61,9 @@ const uint8_t kTimeout = 15;
 IRrecv irrecv(kRecvPin, kCaptureBufferSize, kTimeout, true);
 decode_results results; // Somewhere to store the results
 
+bool hasFired = false;
+unsigned int runCounter = 0;
+
 // This function connects to the MQTT broker
 void reconnect()
 {
@@ -117,6 +120,7 @@ void setup()
     // Use turn on the save buffer feature for more complete capture coverage.
     connectWifi();
 
+    digitalWrite(LED_BUILTIN, LOW);
     irrecv.enableIRIn(); // Start the receiver
 }
 
@@ -125,7 +129,16 @@ void setup()
 //
 void loop()
 {
-
+    if (runCounter > 1000) {
+        runCounter = 0;
+        hasFired = false;
+    }
+    
+    runCounter += 1;
+    Serial.print("runCounter: ");
+    Serial.print(runCounter);
+    Serial.print(" hasFIred? ");
+    Serial.println(hasFired);
     if (!mqttClient.connected())
     {
         reconnect();
@@ -133,12 +146,27 @@ void loop()
     if (irrecv.decode(&results))
     {
         // Probs the wand
-        if (results.bits > 50)
+        if (results.bits > 50 && !hasFired)
         {
+            hasFired = true;
+            runCounter = 0;
+            mqttClient.publish("cmnd/tasmota_70B3A1/POWER", "OFF");
+            mqttClient.publish("cmnd/tasmota_6F6D92/POWER", "OFF");
+            delay(500);
+            mqttClient.publish("cmnd/tasmota_70B3A1/POWER", "ON");
+            mqttClient.publish("cmnd/tasmota_6F6D92/POWER", "ON");
+            delay(750);
             mqttClient.publish("cmnd/tasmota_70B3A1/POWER", "OFF");
             mqttClient.publish("cmnd/tasmota_6F6D92/POWER", "OFF");
             mqttClient.publish("cmnd/FIREPLACE/POWER", "OFF");
             mqttClient.publish("cmnd/CRASH_EFFECT/POWER", "ON");
+            delay(500);
+            mqttClient.publish("cmnd/tasmota_70B3A1/POWER", "ON");
+            mqttClient.publish("cmnd/tasmota_6F6D92/POWER", "ON");
+            delay(1000);
+            mqttClient.publish("cmnd/tasmota_70B3A1/POWER", "OFF");
+            mqttClient.publish("cmnd/tasmota_6F6D92/POWER", "OFF");
+
         }
         Serial.println(results.bits);
         serialPrintUint64(results.value, HEX);
