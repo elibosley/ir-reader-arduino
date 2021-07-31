@@ -110,8 +110,8 @@ void connectWifi()
 
 void setup()
 {
-    pinMode(LED_BUILTIN, OUTPUT);
-
+    pinMode(1, OUTPUT);
+    digitalWrite(1, HIGH);
     Serial.begin(9600); // Status message will be sent to PC at 9600 baud
 #if defined(__AVR_ATmega32U4__) || defined(SERIAL_USB) || defined(SERIAL_PORT_USBVIRTUAL) || defined(ARDUINO_attiny3217)
     delay(4000); // To be able to connect Serial monitor after reset or power up and before first print out. Do not wait for an attached Serial Monitor!
@@ -120,7 +120,6 @@ void setup()
     // Use turn on the save buffer feature for more complete capture coverage.
     connectWifi();
 
-    digitalWrite(LED_BUILTIN, LOW);
     irrecv.enableIRIn(); // Start the receiver
 }
 
@@ -129,11 +128,12 @@ void setup()
 //
 void loop()
 {
-    if (runCounter > 1000) {
+    if (runCounter > 1000)
+    {
         runCounter = 0;
         hasFired = false;
     }
-    
+
     runCounter += 1;
     Serial.print("runCounter: ");
     Serial.print(runCounter);
@@ -166,7 +166,6 @@ void loop()
             delay(1000);
             mqttClient.publish("cmnd/tasmota_70B3A1/POWER", "OFF");
             mqttClient.publish("cmnd/tasmota_6F6D92/POWER", "OFF");
-
         }
         Serial.println(results.bits);
         serialPrintUint64(results.value, HEX);
